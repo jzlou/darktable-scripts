@@ -3,10 +3,24 @@
 ]]
 
 local dt = require "darktable"
-local du = require "lib/dtutils"
+local df = require "lib/dtutils.file"
 
 local function destroy()
    -- nothing to destroy
+end
+
+-- debug function
+function dump(o)
+   if type(o) == 'table' then
+      local s = '{ '
+      for k,v in pairs(o) do
+         if type(k) ~= 'number' then k = '"'..k..'"' end
+         s = s .. '['..k..'] = ' .. dump(v) .. ','
+      end
+      return s .. '} '
+   else
+      return tostring(o)
+   end
 end
 
 function filter_images_by_rating(collection, target_rating)
@@ -17,24 +31,29 @@ function filter_images_by_rating(collection, target_rating)
    end -- iterating over selection
 end
 
+function get_file_name(fname) -- from something like DSCF0001.RAF
+   for substr in string.gmatch(fname, "([^.]+)") do
+      return substr
+   end
+end
+
 local script_data = {}
 script_data.destroy = destroy
 
-
-
+dt.print_log('.................. script call STARTS .................. ')
 local selected_images = dt.gui.selection()
+dt.print_log("Table: " .. dump(selected_images))
 
-if selected_images then
-   dt.print_log("Here are the filenames of the selected images:")
-   for k, image in pairs(selected_images) do
-      dt.print_log(k .. ": " .. image.filename)
-   end
-else
-   print_error("no images selected")
+dt.print_log("DEBUG: Filenames of the selected images...")
+for k, image in pairs(selected_images) do
+   dt.print_log(k .. ": " .. get_file_name(image.filename))
 end
 
-return script_data
+dt.print_log("DEBUG: Creating export directory....")
+local this_dir = selected_images[1].path
+df.mkdir(this_dir .. "\\four_star_jpgs")
 
--- dt.print("this prints to control log")
--- dt.print_error("print error")
--- dt.print_log("plog it")
+dt.print_log("DEBUG: Copying")
+
+dt.print_log('.................. script call ENDS .................. ')
+return script_data
