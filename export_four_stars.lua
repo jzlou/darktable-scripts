@@ -41,19 +41,37 @@ local script_data = {}
 script_data.destroy = destroy
 
 dt.print_log('.................. script call STARTS .................. ')
-local selected_images = dt.gui.selection()
-dt.print_log("Table: " .. dump(selected_images))
-
-dt.print_log("DEBUG: Filenames of the selected images...")
-for k, image in pairs(selected_images) do
-   dt.print_log(k .. ": " .. get_file_name(image.filename))
-end
+local collection = dt.collection
+dt.print_log("DEBUG: Working with this object: " .. dump(collection))
 
 dt.print_log("DEBUG: Creating export directory....")
-local this_dir = selected_images[1].path
-df.mkdir(this_dir .. "\\four_star_jpgs")
+local this_dir = collection[1].path
+local export_dir = this_dir .. "\\four_star_jpgs"
 
-dt.print_log("DEBUG: Copying")
+-- NOTE that the following command does not work out of the box.
+-- It required a change to the file lua-scripts/lib/dtutils/file.lua to enable
+-- string literals-based mkdir because I use folders with spaces in them to make
+-- them more readable for me.
+df.mkdir(export_dir)
 
+dt.print_log("DEBUG: Looking for four star images in this collection.")
+for i, image in ipairs(collection) do
+   if image.rating == 4 then
+      local this_filename = get_file_name(image.filename)
+      dt.print_log("DEBUG: Found a four star: " .. this_filename)
+      jpg_path = image.path .. "\\" .. this_filename .. ".jpg"
+      dt.print_log("--DEBUG: Moving this file: " .. jpg_path)
+      new_jpg_path = export_dir .. "\\" .. this_filename .. ".jpg"
+      dt.print_log("--DEBUG: To this location: " .. new_jpg_path)
+      if df.file_move(jpg_path, new_jpg_path) then -- this is the magic
+         dt.print_log("DEBUG: Moved " .. this_filename .. " successfully")
+      else
+         dt.print_log("DEBUG: Whoopsies on " .. this_filename)
+      end
+   end -- found a 4
+end -- searching this collection
+
+dt.print_log("DEBUG: All set!")
 dt.print_log('.................. script call ENDS .................. ')
+
 return script_data
